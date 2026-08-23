@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vortex Likes - Free Fire</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background-color: #0d0f18; color: #ffffff; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .container { width: 100%; max-width: 420px; padding: 20px; }
+        .card { background: #16192b; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); border: 1px solid #232742; }
+        h1 { font-size: 24px; text-align: center; color: #00ffcc; letter-spacing: 1px; }
+        .subtitle { font-size: 12px; text-align: center; color: #8b9bb4; margin-bottom: 25px; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 13px; margin-bottom: 5px; color: #c5d0e6; }
+        .input-group input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #2a2f55; background: #0f121f; color: #fff; outline: none; }
+        .input-group input:focus { border-color: #00ffcc; }
+        .btn-primary { width: 100%; padding: 12px; border: none; border-radius: 8px; background: linear-gradient(135deg, #00ffcc, #00b3ff); color: #0d0f18; font-weight: 700; cursor: pointer; margin-top: 10px; }
+        .btn-primary:hover { opacity: 0.9; }
+        .hidden { display: none; }
+        .success-box, .error-box { margin-top: 15px; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.5; text-align: left; }
+        .success-box { background: rgba(0, 255, 204, 0.1); color: #00ffcc; border: 1px solid #00ffcc; }
+        .error-box { background: rgba(255, 77, 77, 0.1); color: #ff4d4d; border: 1px solid #ff4d4d; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>VORTEX LIKES</h1>
+            <p class="subtitle">Painel Web Oficial</p>
+            
+            <form id="likeForm">
+                <div class="input-group">
+                    <label for="region">Região (Server)</label>
+                    <input type="text" id="region" placeholder="Ex: BR" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="uid">UID do Jogador</label>
+                    <input type="text" id="uid" placeholder="Ex: 123456789" required>
+                </div>
+
+                <button type="submit" id="submitBtn" class="btn-primary">Enviar Likes</button>
+            </form>
+
+            <div id="resultBox" class="hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('likeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const region = document.getElementById('region').value.trim();
+            const uid = document.getElementById('uid').value.trim();
+            const btn = document.getElementById('submitBtn');
+            const resultBox = document.getElementById('resultBox');
+
+            btn.disabled = true;
+            btn.textContent = 'Enviando...';
+            resultBox.className = 'hidden';
+
+            try {
+                const response = await fetch('/api/send-likes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ region, uid })
+                });
+                const data = await response.json();
+                resultBox.classList.remove('hidden');
+
+                if (data.success) {
+                    resultBox.className = 'success-box';
+                    resultBox.innerHTML = `<strong>✅ Sucesso!</strong><br>👤 Nome: <b>${data.player_name}</b><br>🆔 UID: <b>${data.uid}</b><br>📈 Adicionados: <b>${data.likes_given}</b><br>🗿 Total: <b>${data.likes_after}</b>`;
+                } else {
+                    resultBox.className = 'error-box';
+                    resultBox.textContent = data.error;
+                }
+            } catch (err) {
+                resultBox.classList.remove('hidden');
+                resultBox.className = 'error-box';
+                resultBox.textContent = 'Erro de conexão com o servidor.';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Enviar Likes';
+            }
+        });
+    </script>
+</body>
+</html>

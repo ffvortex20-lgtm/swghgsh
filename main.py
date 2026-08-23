@@ -3,20 +3,38 @@ import requests
 from flask import Flask, request, jsonify, render_template
 import logging
 
+# Configurar logs
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder='templates')
 
 def call_api(region, uid):
-    # Substitua abaixo pela URL real da API que você estiver utilizando
-    url = f"https://your-free-fire-like-api-domain/like?uid={uid}&server_name={region}"
+    server_code = region.lower()
+    # Usando a API funcional de Free Fire para buscar os dados e likes do jogador
+    url = f"https://freefire-api-six.vercel.app/get_player_stats?server={server_code}&uid={uid}&matchmode=RANKED&gamemode=br"
+    
     try:
         response = requests.get(url, timeout=20)
         if response.status_code != 200:
-            return {"error": "Limite máximo atingido ou erro na API."}
-        return response.json()
-    except:
+            return {"error": "Jogador não encontrado ou erro na API."}
+        
+        data = response.json()
+        
+        # Extraindo informações da resposta da API
+        account_info = data.get("AccountInfo", {})
+        player_name = account_info.get("PlayerName") or data.get("playerName") or "Jogador FF"
+        player_likes = account_info.get("PlayerLikes", "N/A")
+        
+        return {
+            "PlayerNickname": player_name,
+            "UID": uid,
+            "Region": region.upper(),
+            "LikesGivenByAPI": "Perfil Carregado",
+            "LikesafterCommand": player_likes
+        }
+    except Exception as e:
+        logger.error(f"Erro na requisição: {e}")
         return {"error": "Falha na conexão com a API."}
 
 @app.route('/')

